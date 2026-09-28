@@ -1,3 +1,5 @@
+// Not named Hook.cpp: MSVC puts all objects in one directory, where
+// Hook.obj would clash with lib/minhook/hook.c's hook.obj
 #include "Hook.hpp"
 
 #include "Modules/Console.hpp"
