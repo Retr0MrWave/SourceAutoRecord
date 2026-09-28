@@ -180,16 +180,22 @@ void CrashHandler::Init() {
 
 	HANDLE process = GetCurrentProcess();
 	SymInitialize(process, 0, true);
-	IMAGEHLP_MODULE info;
-	SymGetModuleInfo(GetCurrentProcess(), (DWORD)&Utils::GetSARPath, &info);
-	SymLoadModule(process, NULL, NULL, NULL, info.BaseOfImage, info.ImageSize);
+	// SizeOfStruct must be set: Wine's dbghelp copies that many bytes into
+	// the struct, so stack garbage there can overwrite unrelated memory
+	IMAGEHLP_MODULE info{};
+	info.SizeOfStruct = sizeof info;
+	if (SymGetModuleInfo(process, (DWORD)&Utils::GetSARPath, &info)) {
+		SymLoadModule(process, NULL, NULL, NULL, info.BaseOfImage, info.ImageSize);
+	}
 }
 
 void CrashHandler::Cleanup() {
-	IMAGEHLP_MODULE info;
+	IMAGEHLP_MODULE info{};
+	info.SizeOfStruct = sizeof info;
 	HANDLE process = GetCurrentProcess();
-	SymGetModuleInfo(process, (DWORD)&Utils::GetSARPath, &info);
-	SymUnloadModule(process, info.BaseOfImage);
+	if (SymGetModuleInfo(process, (DWORD)&Utils::GetSARPath, &info)) {
+		SymUnloadModule(process, info.BaseOfImage);
+	}
 	RemoveVectoredExceptionHandler(g_handle);
 	SymCleanup(GetCurrentProcess());
 }
